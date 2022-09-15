@@ -1,16 +1,15 @@
 use bevy::{prelude::*, pbr::GlobalLightMeta};
 
+pub struct SpriteList;
+
+
 #[derive(Component)]
 struct Collider;
 
 #[derive(Bundle, Default)]
 pub struct GameObject{
-    pub sprite: Sprite,
-    pub transform: Transform,
-    pub global_transform: GlobalTransform,
-    pub texture: Handle<Image>,
-    pub visibility: Visibility,
-    pub computed_visibility: ComputedVisibility,
+    #[bundle]
+    pub sprite_bundle: SpriteBundle
 }
 
 impl GameObject{
@@ -22,14 +21,26 @@ impl GameObject{
 ) -> GameObject{
         let image = assets.load(&image);
         GameObject {
-            sprite: Sprite {
-            custom_size: custom_size,
+            sprite_bundle: SpriteBundle {
+
+                sprite: Sprite {
+                custom_size: custom_size,
                 ..Default::default()
-            },
-            transform: transform,
-            texture: image,
-            ..Default::default()
+                },
+                transform: transform,
+                texture: image,
+                ..Default::default()
+            }
         }
     }
 }
 
+// this is convoluded
+pub fn gen_player_sprite(
+    assets: Res<AssetServer>,
+) -> Vec<Handle<Image>> {
+    let player_sprite: Handle<Image> = assets.load("player.png");
+    let mut res_list = Vec::new();
+    res_list.push(player_sprite);
+    return res_list;
+}

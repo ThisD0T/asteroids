@@ -8,6 +8,8 @@ use bevy_inspector_egui::{
 use crate::{
     lib::{
         GameObject,
+        PhysicsVars,
+        PhysFlag,
     },
     PlayerSprite,
 };
@@ -17,9 +19,9 @@ const player_sprite: &str = "player.png";
 #[derive(Component, Inspectable)]
 pub struct Player;
 
-pub struct PlayerPlugin;
+pub struct SpawnPlugin;
 
-impl Plugin for PlayerPlugin {
+impl Plugin for SpawnPlugin{
     fn build (&self, app: &mut App) {
         app.add_startup_system(spawn_player);
     }
@@ -29,6 +31,7 @@ fn spawn_player(
     mut commands: Commands,
     assets: Res<AssetServer>
 ) {
+    // I realize this is probably a train wreck of a way to handle resources
     let texture: Handle<Image> = assets.load(player_sprite);
 
     let player = commands.spawn_bundle(GameObject {
@@ -43,8 +46,13 @@ fn spawn_player(
             },
             texture: texture,
             ..Default::default()
+        },
+        physics_vars: PhysicsVars {
+            velocity: Vec3::splat(0.0),
+            acceleration: Vec3::splat(0.0),
         }
     })
-    .insert(Player);
+    .insert(Player)
+    .insert(PhysFlag);
 
 }

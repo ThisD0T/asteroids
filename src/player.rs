@@ -50,12 +50,9 @@ pub fn player_boost(
 ) {
     let mut player_phys = query.single_mut();
     let transform = transform_query.single_mut();
-
     let mut boost_vector = Vec3::splat(0.0);
-    boost_vector = Vec3::normalize(player_phys.velocity);
-    boost_vector *= BOOST_FORCE;
 
-    println!("pos: {}, rot: {}", transform.translation, transform.rotation);
+    boost_vector = transform.rotation * (Vec3::Y * BOOST_FORCE);
 
     if keyboard_input.pressed(KeyCode::W) {
         player_phys.acceleration += boost_vector;

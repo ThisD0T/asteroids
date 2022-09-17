@@ -1,5 +1,8 @@
 use bevy::{prelude::*, pbr::GlobalLightMeta, ecs::query::WorldQuery};
 
+pub const MAP_SIZE: f32 = 500.0;
+pub const BOUNDARY_BOUNCE_MULT: f32 = 0.15;
+
 pub struct SpriteList;
 
 #[derive(Component)]
@@ -70,10 +73,38 @@ pub fn apply_phys(
             let temp_phys_accel = phys.acceleration;
 
             temp_phys_vel = temp_phys_vel + temp_phys_accel;
+            temp_phys_vel = Vec3::clamp(temp_phys_vel, Vec3::splat(-11.0), Vec3::splat(11.0));
 
-            obj_transform.translation = obj_transform.translation + temp_phys_vel;
+            phys.velocity = temp_phys_vel;
+            obj_transform.translation = obj_transform.translation + phys.velocity;
 
             phys.acceleration = Vec3::splat(0.0);
         }
     }
 }
+
+pub fn check_borders(
+    mut object_phys_query: Query<&mut PhysicsVars, &PhysFlag>,
+    mut object_transform_query: Query<&mut Transform, &PhysFlag>,
+) {
+    for mut phys in object_phys_query.iter_mut() {
+        for mut obj_transform in object_transform_query.iter_mut() {
+            if obj_transform.translation.x > MAP_SIZE/2.0 {
+                obj_transform.translation.x = MAP_SIZE/2.0;
+                phys.velocity.x *= -BOUNDARY_BOUNCE_MULT;
+            } else if obj_transform.translation.x < -MAP_SIZE/2.0 {
+                obj_transform.translation.x = -MAP_SIZE/2.0;
+                phys.velocity.x *= -BOUNDARY_BOUNCE_MULT;
+            }
+
+            if obj_transform.translation.y > MAP_SIZE/2.0 {
+                obj_transform.translation.y = MAP_SIZE/2.0;
+                phys.velocity.y *= -BOUNDARY_BOUNCE_MULT;
+            } else if obj_transform.translation.y < -MAP_SIZE/2.0 {
+                obj_transform.translation.y = -MAP_SIZE/2.0;
+                phys.velocity.y *= -BOUNDARY_BOUNCE_MULT;
+            }
+        }
+    }
+}
+

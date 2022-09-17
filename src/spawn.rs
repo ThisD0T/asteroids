@@ -10,11 +10,13 @@ use crate::{
         GameObject,
         PhysicsVars,
         PhysFlag,
+        MAP_SIZE,
     },
     PlayerSprite,
 };
 
-const player_sprite: &str = "player.png";
+
+const PLAYER_SPRITE: &str = "player.png";
 
 #[derive(Component, Inspectable)]
 pub struct Player;
@@ -23,7 +25,9 @@ pub struct SpawnPlugin;
 
 impl Plugin for SpawnPlugin{
     fn build (&self, app: &mut App) {
-        app.add_startup_system(spawn_player);
+        app.add_startup_system(spawn_player)
+        .add_startup_system(spawn_border);
+        //app.add_startup_system(spawn_bg);
     }
 }
 
@@ -32,7 +36,7 @@ fn spawn_player(
     assets: Res<AssetServer>
 ) {
     // I realize this is probably a train wreck of a way to handle resources
-    let texture: Handle<Image> = assets.load(player_sprite);
+    let texture: Handle<Image> = assets.load(PLAYER_SPRITE);
 
     let player = commands.spawn_bundle(GameObject {
         sprite_bundle: SpriteBundle {
@@ -53,6 +57,61 @@ fn spawn_player(
         }
     })
     .insert(Player)
-    .insert(PhysFlag);
+    .insert(PhysFlag)
+    .insert(Name::new("Player"));
 
+}
+
+fn spawn_asteroid(
+    mut commands: Commands,
+    num_asteroids: u32,
+) {
+
+}
+
+/*
+fn spawn_bg(
+    mut commands: Commands, 
+    assets: Res<AssetServer>
+) {
+    let background_texture: Handle<Image> = assets.load("background.png");
+    let mut background_elements = Vec::new();
+
+    for _ in 0..50 {
+        let star = commands.spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::splat(3.0)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::new()
+            }
+            ..Default::default()
+        },
+        );
+    }
+}
+*/
+
+fn spawn_border (
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+) {
+    let background_texture= assets.load("boundary.png");
+
+    let boundary = commands.spawn_bundle(
+        SpriteBundle {
+            sprite: Sprite {
+                custom_size: Some(Vec2::splat(MAP_SIZE)),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: Vec3::splat(0.0),
+                ..Default::default()
+            },
+            texture: background_texture,
+            ..Default::default()
+        }
+        )
+        .insert(Name::new("Boundary"));
 }

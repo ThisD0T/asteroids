@@ -1,6 +1,6 @@
 use bevy::{prelude::*, pbr::GlobalLightMeta, ecs::query::WorldQuery};
 
-pub const MAP_SIZE: f32 = 500.0;
+pub const MAP_SIZE: f32 = 1500.0;
 pub const BOUNDARY_BOUNCE_MULT: f32 = 0.15;
 
 pub struct SpriteList;
@@ -65,6 +65,7 @@ pub fn gen_player_sprite(
 pub fn apply_phys(
     mut object_phys: Query<&mut PhysicsVars, &PhysFlag>,
     mut object_transform: Query<&mut Transform, &PhysFlag>,
+    time: Res<Time>,
 ) {
     for mut phys in object_phys.iter_mut() {
         for mut obj_transform in object_transform.iter_mut() {

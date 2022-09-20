@@ -1,3 +1,4 @@
+use bevy::transform;
 use bevy::{prelude::*, pbr::GlobalLightMeta, ecs::query::WorldQuery, time::Stopwatch};
 
 use std::sync::Arc;
@@ -49,6 +50,9 @@ pub struct PhysFlag;
 
 #[derive(Component)]
 pub struct HealthText;
+
+#[derive(Component)]
+pub struct GameOverText;
 
 #[derive(Component, Default)]
 pub struct PhysicsVars{
@@ -288,18 +292,52 @@ pub fn setup_text (
             }),
         )
         .insert(HealthText);
+    
+    let game_over_text = commands.spawn().id();
+    commands.entity(game_over_text)
+        .insert_bundle(
+            TextBundle::from_section(
+
+                "GAME OVER",
+                TextStyle {
+                    font: assets.load("LemonMilk.ttf"),
+                    font_size: 100.0,
+                    color: Color::RED,
+                },
+            )
+            .with_text_alignment(TextAlignment::CENTER)
+            .with_style(Style {
+                align_self: AlignSelf::FlexEnd,
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    bottom: Val::Px(5.0),
+                    right: Val::Px(15.0),
+                    ..default()
+                },
+                ..default()
+            }),
+        )
+        .insert(GameOverText);
 
 }
 
 pub fn update_health_text(
     mut query: Query<&mut Text, With<HealthText>>,
     mut player_query: Query<&mut PlayerStats, With<PhysFlag>>,
+    mut game_over_query: Query<&mut Visibility, With<GameOverText>>,
 ) {
     let mut text = query.single_mut();
     let player_stats = player_query.single_mut();
     let health = player_stats.health;
 
+    let mut game_over = game_over_query.single_mut();
+    game_over.is_visible = false;
+
     text.sections[1].value = format!("{health}");
+
+    if health < 1 {
+        game_over.is_visible = true;
+    }
 }
 
 /*

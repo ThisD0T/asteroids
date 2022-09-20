@@ -1,6 +1,7 @@
 use bevy::{
     prelude::*,
     input::keyboard::KeyboardInput,
+    time::Stopwatch,
 };
 
 use crate::lib::{
@@ -12,6 +13,7 @@ use crate::lib::{
     player_health,
     GameState,
     update_health_text,
+    score_text,
 };
 use crate::spawn::{
     Player,
@@ -25,12 +27,12 @@ use crate::{
 
 #[derive(Component)]
 pub struct BulletTimer {
-    pub timer: Timer
+    pub stopwatch: Stopwatch,
 }
 
 #[derive(Component)]
 pub struct DeathTimer {
-    pub timer: Timer
+    pub timer: Timer,
 }
 
 #[derive(Component)]
@@ -48,6 +50,7 @@ impl Plugin for PlayerPlugin {
             .with_system(bullet_timeout)
             .with_system(bullet_collision_check)
             .with_system(player_health)
+            .with_system(score_text)
         );
 
         app.add_system(update_health_text);
@@ -109,8 +112,11 @@ pub fn player_shoot (
 ) {
     let mut timer = time_query.single_mut();
 
-    timer.timer.tick(time.delta());
-    if timer.timer.finished() {
+    timer.stopwatch.tick(time.delta());
+
+    println!("{}", timer.stopwatch.elapsed_secs());
+
+    if timer.stopwatch.elapsed_secs() > 1.3 {
         if keyboard_input.pressed(KeyCode::Space) {
 
             let player_transform = query.single_mut();
@@ -141,20 +147,22 @@ pub fn player_shoot (
                     }
                 })
                 .insert(PhysFlag)
-                .insert(DeathTimer{timer: Timer::from_seconds(3.5, false)})
+                .insert(DeathTimer{timer: Timer::from_seconds(2.0, false)})
                 .insert(Bullet)
                 .insert(BulletCollider);
+            timer.stopwatch.reset();
         }
-        timer.timer.reset();
     }
 }
 
 fn bullet_timeout(
     mut commands: Commands,
-    mut bullet_query: Query<(Entity, &mut DeathTimer), With<DeathTimer>>,
+    mut bullet_query: Query<(Entity, &mut DeathTimer, &mut Transform), With<DeathTimer>>,
     time: Res<Time>,
 ) {
-    for (entity, mut timer_query) in bullet_query.iter_mut() {
+
+    for (entity, mut timer_query, mut bullet_transform) in bullet_query.iter_mut() {
+
         let mut timer = timer_query;
 
         timer.timer.tick(time.delta());
@@ -162,6 +170,7 @@ fn bullet_timeout(
             commands.entity(entity).despawn();
         }
     }
+
 }
 
 pub fn camera_follow(

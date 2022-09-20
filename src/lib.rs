@@ -54,6 +54,14 @@ pub struct HealthText;
 #[derive(Component)]
 pub struct GameOverText;
 
+#[derive(Component)]
+pub struct ScoreText;
+
+#[derive(Component)]
+pub struct Score {
+    pub score: u32,
+}
+
 #[derive(Component, Default)]
 pub struct PhysicsVars{
     pub velocity: Vec3,
@@ -230,11 +238,17 @@ pub fn bullet_collision_check(
     mut commands: Commands,
     mut asteroid_query: Query<(Entity, &Transform, &AsteroidSize), Without<BulletCollider>>,
     mut bullet_query: Query<&mut Transform, With<BulletCollider>>,
+    mut text_query: Query<&mut Text, With<ScoreText>>,
+    mut score_query: Query<&mut Score, With<PhysFlag>>,
 ) {
+    let mut score = score_query.single_mut();
+    let current_score = score.score;
+
     for (entity, mut asteroid_transform, mut asteroid_size) in asteroid_query.iter_mut() {
         for mut transform in bullet_query.iter_mut() {
             if Vec3::distance(transform.translation, asteroid_transform.translation) < asteroid_size.size{
                 commands.entity(entity).despawn();
+                score.score += 1;
             }
         }
     }
@@ -293,6 +307,38 @@ pub fn setup_text (
         )
         .insert(HealthText);
     
+    let score_text = commands.spawn().id();
+    commands.entity(score_text)
+        .insert_bundle(
+
+            TextBundle::from_sections([
+                TextSection::new(
+                    "Score: ",
+                    TextStyle {
+                        font: assets.load("LemonMilk.ttf"),
+                        font_size: 30.0,
+                        color: Color::WHITE,
+                    },
+                ),
+                TextSection::from_style(TextStyle {
+                    font: assets.load("LemonMilk.ttf"),
+                    font_size: 30.0,
+                    color: Color::WHITE,
+                }),
+            ])
+            .with_style(Style {
+                align_self: AlignSelf::FlexEnd,
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    top: Val::Px(5.0),
+                    right: Val::Px(15.0),
+                    ..default()
+                },
+                ..default()
+            }),
+        )
+        .insert(ScoreText);
+
     let game_over_text = commands.spawn().id();
     commands.entity(game_over_text)
         .insert_bundle(
@@ -338,6 +384,17 @@ pub fn update_health_text(
     if health < 1 {
         game_over.is_visible = true;
     }
+}
+
+pub fn score_text(
+    mut query: Query<&mut Text, With<ScoreText>>,
+    mut score_query: Query<&mut Score, With<PhysFlag>>,
+) {
+    let mut text = query.single_mut();
+    let mut score_struct = score_query.single_mut();
+    let mut score = score_struct.score;
+
+    text.sections[1].value = format!("{score}");
 }
 
 /*

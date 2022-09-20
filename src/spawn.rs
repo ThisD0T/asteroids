@@ -3,6 +3,7 @@ use std::time::Duration;
 use bevy::{
     prelude::*,
     render::camera::ScalingMode,
+    time::Stopwatch,
 };
 
 
@@ -21,6 +22,7 @@ use crate::{
         PlayerStats,
         GameState,
         setup_text,
+        Score,
     },
     PlayerSprite,
 };
@@ -101,10 +103,11 @@ fn spawn_player(
             }
         })
         .insert(AsteroidTimer{timer: Timer::from_seconds(10.0, false)})
-        .insert(BulletTimer{timer: Timer::from_seconds(1.0, false)})
+        .insert(BulletTimer{stopwatch: Stopwatch::new()})
         .insert(Player)
         .insert(PhysFlag)
         .insert(PlayerStats{health: 3, fuel: 20.0})
+        .insert(Score{score: 0})
         .insert(Name::new("Player"));
 
         let health_text = commands.spawn().id();

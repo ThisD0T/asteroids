@@ -14,6 +14,9 @@ use crate::lib::{
     GameState,
     update_health_text,
     score_text,
+    PlayerFuelStopwatch,
+    fuel_cycle,
+    update_fuel_text,
 };
 use crate::spawn::{
     Player,
@@ -51,6 +54,8 @@ impl Plugin for PlayerPlugin {
             .with_system(bullet_collision_check)
             .with_system(player_health)
             .with_system(score_text)
+            .with_system(fuel_cycle)
+            .with_system(update_fuel_text)
         );
 
         app.add_system(update_health_text);

@@ -23,6 +23,8 @@ use crate::{
         GameState,
         setup_text,
         Score,
+        PlayerFuelStopwatch,
+        make_depot,
     },
     PlayerSprite,
 };
@@ -52,7 +54,8 @@ impl Plugin for SpawnPlugin{
     fn build (&self, app: &mut App) {
         app.add_startup_system(spawn_player)
         .add_startup_system(spawn_border)
-        .add_startup_system(setup_text);
+        .add_startup_system(setup_text)
+        .add_startup_system(setup);
         app.add_system_set(SystemSet::on_update(GameState::Playing)
             .with_system(asteroid_spawn_sys)
         );
@@ -102,11 +105,12 @@ fn spawn_player(
                 acceleration: Vec3::splat(0.0),
             }
         })
-        .insert(AsteroidTimer{timer: Timer::from_seconds(10.0, false)})
+        .insert(AsteroidTimer{timer: Timer::from_seconds(8.0, false)})
         .insert(BulletTimer{stopwatch: Stopwatch::new()})
         .insert(Player)
         .insert(PhysFlag)
         .insert(PlayerStats{health: 3, fuel: 20.0})
+        .insert(PlayerFuelStopwatch{stopwatch: Stopwatch::new()})
         .insert(Score{score: 0})
         .insert(Name::new("Player"));
 
@@ -152,7 +156,14 @@ pub fn asteroid_spawn_sys (
 
     player.timer.tick(time.delta());
     if player.timer.just_finished() {
-        spawn_asteroid(commands, 5, assets);
+        spawn_asteroid(commands, 7, assets);
         player.timer.reset();
     }
+}
+
+fn setup(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+) {
+    make_depot(commands, assets);
 }

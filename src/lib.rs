@@ -58,9 +58,17 @@ pub struct GameOverText;
 pub struct ScoreText;
 
 #[derive(Component)]
+pub struct DepotSize {
+    size: f32,
+}
+
+#[derive(Component)]
 pub struct Score {
     pub score: u32,
 }
+
+#[derive(Component)]
+pub struct FuelText;
 
 #[derive(Component, Default)]
 pub struct PhysicsVars{
@@ -77,6 +85,11 @@ pub struct AsteroidTimer {
 pub struct PlayerStats {
     pub health: u32,
     pub fuel: f32,
+}
+
+#[derive(Component)]
+pub struct PlayerFuelStopwatch {
+    pub stopwatch: Stopwatch
 }
 
 #[derive(Bundle, Default)]
@@ -365,6 +378,37 @@ pub fn setup_text (
         )
         .insert(GameOverText);
 
+    let fuel_text = commands.spawn().id();
+    commands.entity(fuel_text)
+        .insert_bundle(
+            
+            TextBundle::from_sections([
+                TextSection::new(
+                    "Fuel: ",
+                    TextStyle {
+                        font: assets.load("LemonMilk.ttf"),
+                        font_size: 30.0,
+                        color: Color::ORANGE,
+                    },
+                ),
+                TextSection::from_style(TextStyle {
+                    font: assets.load("LemonMilk.ttf"),
+                    font_size: 30.0,
+                    color: Color::ORANGE,
+                }),
+            ])
+            .with_style(Style {
+                align_self: AlignSelf::FlexEnd,
+                position_type: PositionType::Absolute,
+                position: UiRect {
+                    bottom: Val::Px(5.0),
+                    left: Val::Px(5.0),
+                    ..default()
+                },
+                ..default()
+            }),
+        )
+        .insert(FuelText);
 }
 
 pub fn update_health_text(
@@ -397,9 +441,90 @@ pub fn score_text(
     text.sections[1].value = format!("{score}");
 }
 
+pub fn update_fuel_text(
+    mut text_query: Query<&mut Text, With<FuelText>>,
+    mut fuel_query: Query<&mut PlayerStats, With<PhysFlag>>,
+) {
+    let mut text = text_query.single_mut();
+    let mut fuel_struct = fuel_query.single_mut();
+    let mut fuel = fuel_struct.fuel;
+
+    text.sections[1].value = format!("{fuel}");
+}
+
 /*
 pub fn player_health_text(
     mut commands: Commands,
 
 )
 */
+
+pub fn make_depot(
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+) {
+    let mut rng = rand::thread_rng();
+    let depot_size_float = rng.gen_range(20.0..50.0);
+    let depot_size = Vec2::splat(depot_size_float);
+    let depot_texture = assets.load("fuel_depot.png");
+    let depot_position = Vec3::new(rng.gen_range(-MAP_SIZE/2.0..MAP_SIZE/2.0), rng.gen_range(-MAP_SIZE/2.0..MAP_SIZE/2.0), 0.0);
+
+    let fuel_depot = commands.spawn().id();
+    commands.entity(fuel_depot)
+        .insert_bundle(SpriteBundle{
+            sprite: Sprite {
+                custom_size: Some(depot_size),
+                ..Default::default()
+            },
+            transform: Transform {
+                translation: depot_position,
+                ..Default::default()
+            },
+            texture: depot_texture,
+            ..Default::default()
+        })
+        .insert(DepotSize {
+            size: depot_size_float
+        });
+}
+
+pub fn fuel_cycle(
+    mut commands: Commands,
+    mut player_query: Query<(&mut Transform, &mut PlayerStats), With<PhysFlag>>,
+    mut depot_query: Query<(Entity, &DepotSize, &mut Transform), Without<PhysFlag>>,
+    mut time: Res<Time>,
+    assets: Res<AssetServer>,
+    mut state: ResMut<State<GameState>>,
+) {
+    let mut player_fueled: bool = false;
+
+    let (depot_entity, depot_size, mut depot_transform) = depot_query.single_mut(); 
+    let (player_transform, mut player_stats) = player_query.single_mut();
+            
+            player_stats.fuel -= time.delta_seconds();
+            println!("{}", player_stats.fuel);
+
+            if player_stats.fuel < 0.0 {
+                state.set(GameState::GameOver).expect("Failed to change states");
+            }
+
+            if Vec3::distance(depot_transform.translation, player_transform.translation) < depot_size.size {
+                commands.entity(depot_entity).despawn();
+                player_fueled = true;
+                player_stats.fuel = 10.0;
+            }
+
+    if player_fueled == true {
+        make_depot(commands, assets);
+    }
+}
+
+pub fn game_over(
+    mut game_over_query: Query<&mut Visibility, With<GameOverText>>,
+) {
+    let mut game_over = game_over_query.single_mut();
+    game_over.is_visible = true;
+    println!("game over");
+}
+
+

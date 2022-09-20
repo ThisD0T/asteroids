@@ -10,6 +10,7 @@ use crate::lib::{
     check_borders,
     GameState::{Playing, GameOver},
     GameState,
+    game_over,
 };
 
 use crate::spawn::Player;
@@ -28,8 +29,8 @@ use crate::player::{
     PlayerPlugin
 };
 
-const WWIDTH: f32 = 1280.0;
-const WHEIGHT: f32 = 720.0;
+const WWIDTH: f32 = 1024.0;
+const WHEIGHT: f32 = 576.0;
 
 pub const ROTATION_SPEED: f32 = 8.0;
 pub const BOOST_FORCE: f32 = 4.00;
@@ -57,5 +58,8 @@ fn main() {
         .with_system(apply_phys)
         .with_system(check_borders)
     )
-    .run();
+    .add_system_set(SystemSet::on_update(GameState::GameOver)
+        .with_system(game_over)
+    )
+  .run();
 }

@@ -3,7 +3,16 @@ use bevy::{
     input::keyboard::KeyboardInput,
 };
 
-use crate::lib::PhysicsVars;
+use crate::lib::{
+    PhysicsVars,
+    GameObject,
+    PhysFlag,
+    bullet_collision_check,
+    BulletCollider,
+    player_health,
+    GameState,
+    update_health_text,
+};
 use crate::spawn::{
     Player,
     BorderFlag,
@@ -14,13 +23,34 @@ use crate::{
     ROTATION_SPEED,
 };
 
+#[derive(Component)]
+pub struct BulletTimer {
+    pub timer: Timer
+}
+
+#[derive(Component)]
+pub struct DeathTimer {
+    pub timer: Timer
+}
+
+#[derive(Component)]
+pub struct Bullet;
+
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(camera_follow);
-        app.add_system(player_input);
-        app.add_system(player_boost);
+        app.add_system_set(SystemSet::on_update(GameState::Playing)
+            .with_system(camera_follow)
+            .with_system(player_input)
+            .with_system(player_boost)
+            .with_system(player_shoot)
+            .with_system(bullet_timeout)
+            .with_system(bullet_collision_check)
+            .with_system(player_health)
+        );
+
+        app.add_system(update_health_text);
     }
 }
 
@@ -65,6 +95,72 @@ pub fn player_boost(
 
     if keyboard_input.pressed(KeyCode::W) {
         player_phys.acceleration += boost_vector * time.delta_seconds();
+    }
+}
+
+pub fn player_shoot (
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut query: Query<&mut Transform, With<Player>>,
+    mut time_query: Query<&mut BulletTimer, With<Player>>,
+    mut phys_query: Query<&mut PhysicsVars, With<Player>>,
+    keyboard_input: Res<Input<KeyCode>>,
+    time: Res<Time>,
+) {
+    let mut timer = time_query.single_mut();
+
+    timer.timer.tick(time.delta());
+    if timer.timer.finished() {
+        if keyboard_input.pressed(KeyCode::Space) {
+
+            let player_transform = query.single_mut();
+            let player_phys = phys_query.single_mut();
+
+            let mut bullet = commands.spawn().id();
+
+            let bullet_size = Vec2::splat(5.0);
+            let bullet_pos = player_transform;
+            let bullet_texture = assets.load("bullet.png");
+
+
+            commands.entity(bullet)
+                .insert_bundle(GameObject{
+                    sprite_bundle: SpriteBundle {
+                        sprite: Sprite {
+                            custom_size: Some(bullet_size),
+                                ..Default::default()
+                        },
+
+                        transform: * bullet_pos,
+                        texture: bullet_texture,
+                        ..Default::default()
+                    },
+                    physics_vars: PhysicsVars {
+                        velocity: bullet_pos.rotation * (Vec3::Y * BOOST_FORCE) + player_phys.velocity,
+                        ..Default::default()
+                    }
+                })
+                .insert(PhysFlag)
+                .insert(DeathTimer{timer: Timer::from_seconds(3.5, false)})
+                .insert(Bullet)
+                .insert(BulletCollider);
+        }
+        timer.timer.reset();
+    }
+}
+
+fn bullet_timeout(
+    mut commands: Commands,
+    mut bullet_query: Query<(Entity, &mut DeathTimer), With<DeathTimer>>,
+    time: Res<Time>,
+) {
+    for (entity, mut timer_query) in bullet_query.iter_mut() {
+        let mut timer = timer_query;
+
+        timer.timer.tick(time.delta());
+        if timer.timer.just_finished() {
+            commands.entity(entity).despawn();
+        }
     }
 }
 

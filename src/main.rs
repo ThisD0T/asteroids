@@ -8,6 +8,8 @@ mod lib;
 use crate::lib::{
     apply_phys,
     check_borders,
+    GameState::{Playing, GameOver},
+    GameState,
 };
 
 use crate::spawn::Player;
@@ -31,13 +33,13 @@ const WHEIGHT: f32 = 720.0;
 
 pub const ROTATION_SPEED: f32 = 8.0;
 pub const BOOST_FORCE: f32 = 4.00;
-pub const MAX_SPEED: f32 = 5.0;
 
 pub struct PlayerSprite(Handle<Image>);
 
 
 fn main() {
     App::new()
+    .add_state(GameState::Playing)
     .insert_resource(ClearColor(Color::rgb(0.0, 0.0, 0.0)))
     .insert_resource(WindowDescriptor {
         title: "Rasteroids".to_string(),
@@ -47,11 +49,13 @@ fn main() {
         ..Default::default()
     })
     .add_plugins(DefaultPlugins)
-    .add_system(keyboard_input)
-    .add_system(apply_phys)
-    .add_system(check_borders)
     .add_plugin(PlayerPlugin)
     .add_plugin(SpawnPlugin)
     .add_plugin(DebugPlugin)
+    .add_system_set(SystemSet::on_update(GameState::Playing)
+        .with_system(keyboard_input)
+        .with_system(apply_phys)
+        .with_system(check_borders)
+    )
     .run();
 }

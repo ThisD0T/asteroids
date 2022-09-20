@@ -1,12 +1,14 @@
+use std::time::Duration;
+
 use bevy::{
     prelude::*,
     render::camera::ScalingMode,
 };
 
+
 use bevy_inspector_egui::{
     Inspectable
 };
-
 
 use crate::{
     lib::{
@@ -14,15 +16,24 @@ use crate::{
         PhysicsVars,
         PhysFlag,
         MAP_SIZE,
+        AsteroidTimer,
+        spawn_asteroid,
+        PlayerStats,
+        GameState,
+        setup_text,
     },
     PlayerSprite,
 };
 
-
-const PLAYER_SPRITE: &str = "player.png";
+use crate::player::{
+    BulletTimer,
+};
 
 #[derive(Component, Inspectable)]
 pub struct Player;
+
+const PLAYER_SPRITE: &str = "player.png";
+
 
 #[derive(Component)]
 struct Camera;
@@ -38,7 +49,11 @@ pub struct SpawnPlugin;
 impl Plugin for SpawnPlugin{
     fn build (&self, app: &mut App) {
         app.add_startup_system(spawn_player)
-        .add_startup_system(spawn_border);
+        .add_startup_system(spawn_border)
+        .add_startup_system(setup_text);
+        app.add_system_set(SystemSet::on_update(GameState::Playing)
+            .with_system(asteroid_spawn_sys)
+        );
         //app.add_startup_system(spawn_bg);
     }
 }
@@ -85,42 +100,16 @@ fn spawn_player(
                 acceleration: Vec3::splat(0.0),
             }
         })
+        .insert(AsteroidTimer{timer: Timer::from_seconds(10.0, false)})
+        .insert(BulletTimer{timer: Timer::from_seconds(1.0, false)})
         .insert(Player)
         .insert(PhysFlag)
+        .insert(PlayerStats{health: 3, fuel: 20.0})
         .insert(Name::new("Player"));
 
-}
-
-fn spawn_asteroid(
-    mut commands: Commands,
-    num_asteroids: u32,
-) {
+        let health_text = commands.spawn().id();
 
 }
-
-/*
-fn spawn_bg(
-    mut commands: Commands, 
-    assets: Res<AssetServer>
-) {
-    let background_texture: Handle<Image> = assets.load("background.png");
-    let mut background_elements = Vec::new();
-
-    for _ in 0..50 {
-        let star = commands.spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                custom_size: Some(Vec2::splat(3.0)),
-                ..Default::default()
-            },
-            transform: Transform {
-                translation: Vec3::new()
-            }
-            ..Default::default()
-        },
-        );
-    }
-}
-*/
 
 fn spawn_border (
     mut commands: Commands,
@@ -140,8 +129,27 @@ fn spawn_border (
             },
             texture: background_texture,
             ..Default::default()
-        }
-        )
+        })
         .insert(Name::new("Boundary"))
         .insert(BorderFlag);
+}
+
+fn make_timers () -> Timer {
+    let timer = Timer::from_seconds(0.0, false);
+    return timer
+}
+
+pub fn asteroid_spawn_sys (
+    mut commands: Commands,
+    mut player_query: Query<&mut AsteroidTimer, With<Player>>,
+    time: Res<Time>,
+    assets: Res<AssetServer>,
+) {
+    let mut player = player_query.single_mut();
+
+    player.timer.tick(time.delta());
+    if player.timer.just_finished() {
+        spawn_asteroid(commands, 5, assets);
+        player.timer.reset();
+    }
 }

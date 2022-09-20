@@ -114,8 +114,6 @@ pub fn player_shoot (
 
     timer.stopwatch.tick(time.delta());
 
-    println!("{}", timer.stopwatch.elapsed_secs());
-
     if timer.stopwatch.elapsed_secs() > 1.3 {
         if keyboard_input.pressed(KeyCode::Space) {
 

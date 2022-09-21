@@ -29,8 +29,8 @@ use crate::player::{
     PlayerPlugin
 };
 
-const WWIDTH: f32 = 1024.0;
-const WHEIGHT: f32 = 576.0;
+const WWIDTH: f32 = 1280.0;
+const WHEIGHT: f32 = 720.0;
 
 pub const ROTATION_SPEED: f32 = 8.0;
 pub const BOOST_FORCE: f32 = 4.00;

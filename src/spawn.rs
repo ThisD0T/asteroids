@@ -141,11 +141,6 @@ fn spawn_border (
         .insert(BorderFlag);
 }
 
-fn make_timers () -> Timer {
-    let timer = Timer::from_seconds(0.0, false);
-    return timer
-}
-
 pub fn asteroid_spawn_sys (
     mut commands: Commands,
     mut player_query: Query<&mut AsteroidTimer, With<Player>>,

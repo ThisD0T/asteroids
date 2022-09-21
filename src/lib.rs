@@ -282,7 +282,6 @@ pub fn player_health(
         if Vec3::distance(player_transform.translation, asteroid_transform.translation) < asteroid_size.size {
             commands.entity(asteroid_entity).despawn();
             player_stats.health -= 1;
-            println!("{}", player_stats.health);
             if player_stats.health < 1 {
                 state.set(GameState::GameOver).expect("Failed to change states");
             }
@@ -464,7 +463,7 @@ pub fn make_depot(
     assets: Res<AssetServer>,
 ) {
     let mut rng = rand::thread_rng();
-    let depot_size_float = rng.gen_range(20.0..50.0);
+    let depot_size_float = rng.gen_range(40.0..70.0);
     let depot_size = Vec2::splat(depot_size_float);
     let depot_texture = assets.load("fuel_depot.png");
     let depot_position = Vec3::new(rng.gen_range(-MAP_SIZE/2.0..MAP_SIZE/2.0), rng.gen_range(-MAP_SIZE/2.0..MAP_SIZE/2.0), 0.0);
@@ -502,7 +501,6 @@ pub fn fuel_cycle(
     let (player_transform, mut player_stats) = player_query.single_mut();
             
             player_stats.fuel -= time.delta_seconds();
-            println!("{}", player_stats.fuel);
 
             if player_stats.fuel < 0.0 {
                 state.set(GameState::GameOver).expect("Failed to change states");
@@ -511,7 +509,7 @@ pub fn fuel_cycle(
             if Vec3::distance(depot_transform.translation, player_transform.translation) < depot_size.size {
                 commands.entity(depot_entity).despawn();
                 player_fueled = true;
-                player_stats.fuel = 10.0;
+                player_stats.fuel = 20.0;
             }
 
     if player_fueled == true {
@@ -524,7 +522,6 @@ pub fn game_over(
 ) {
     let mut game_over = game_over_query.single_mut();
     game_over.is_visible = true;
-    println!("game over");
 }
 
 
